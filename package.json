@@ -1,6 +1,6 @@
 {
   "name": "nest-social-auth",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "The social authentication library for your NestJS Applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
