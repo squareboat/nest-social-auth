@@ -1,6 +1,6 @@
 {
   "name": "nest-social-auth",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "description": "The social authentication library for your NestJS Applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -20,7 +20,6 @@
   "homepage": "",
   "author": "Piyush Chhabra <piyushchhabra.1198@gmail.com>",
   "private": false,
-  "license": "MIT",
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.json",
     "format": "prettier --write \"**/*.ts\"",
