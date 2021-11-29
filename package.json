@@ -1,6 +1,6 @@
 {
   "name": "nest-social-auth",
-  "version": "0.0.18",
+  "version": "0.1.0",
   "description": "The social authentication library for your NestJS Applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -44,5 +44,6 @@
   "peerDependencies": {
     "@nestjs/common": "^6.7.0 || ^7.0.0",
     "@nestjs/core": "^6.7.0 || ^7.0.0"
-  }
+  },
+  "license": "MIT"
 }

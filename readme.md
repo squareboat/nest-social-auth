@@ -14,7 +14,7 @@ A mult-disk mult-driver filesystem manager for NestJS. 💾
   - [Driver Configuration](#driver-configuration)
     - [Facebook](#facebook)
     - [Google](#google)
-      [Linkedin](#linkedin)
+    - [Linkedin](#linkedin)
   - [Usage](#usage)
     - [Methods](#methods)
 
@@ -149,41 +149,41 @@ The best part about this package is the simplicity that it provides while workin
 
 > Currently the package supports login authentication for facebook,google and linkedin.
 
-**Driver Name:** `facebook`
+**Driver Name:** `Facebook`
 
 **Configuration:**
 
 ```typescript
 {
-            clientId:process.env.FACEBOOK_APP_ID,
-            clientSecret:process.env.FACEBOOK_APP_SECRET
-        }
+    clientId:process.env.FACEBOOK_APP_ID,
+    clientSecret:process.env.FACEBOOK_APP_SECRET
+    }
 ```
 
 `facebook` driver expects two parameters to authenticate a token. You can get the `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET` by creating a developer account at facebook and enabling auth 2.0. Learn more about it [here](https://developers.facebook.com/docs/facebook-login/).
 
-**Driver Name:** `google`
+**Driver Name:** `Google`
 
 **Configuration:**
 
 ```typescript
 {
-            clientId:process.env.GOOGLE_APP_ID,
-            clientSecret:process.env.GOOGLE_APP_SECRET
-        }
+    clientId:process.env.GOOGLE_APP_ID,
+    clientSecret:process.env.GOOGLE_APP_SECRET
+    }
 ```
 
 `google` driver expects two parameters to authenticate a token. You can get the `GOOGLE_APP_ID`, `GOOGLE_APP_SECRET` by creating a developer account at google and enabling auth 2.0. Learn more about it [here](https://developers.google.com/identity/sign-in/web/sign-in).
 
-**Driver Name:** `linkedin`
+**Driver Name:** `Linkedin`
 
 **Configuration:**
 
 ```typescript
 {
-            clientId:process.env.LINKEDIN_APP_ID,
-            clientSecret:process.env.LINKEDIN_APP_SECRET
-        }
+    clientId:process.env.LINKEDIN_APP_ID,
+    clientSecret:process.env.LINKEDIN_APP_SECRET
+    }
 ```
 
 `linkedin` driver expects two parameters to authenticate a token. You can get the `LINKEDIN_APP_ID`, `LINKEDIN_APP_SECRET` by creating a developer account at linkedin and enabling auth 2.0. Learn more about it [here](https://developer.linkedin.com/).
@@ -200,6 +200,6 @@ This package provides a single and uniform API for any type of operation across 
 
 #### Methods
 
-- `getProfile(payload: Record<string,any>)`: Get user profile from token.
+- `getProfile(payload: CredentialsPayload)`: Get user profile from token.
 
-- `getAccessToken(payload:ProfileParams)`: Get the access token for linkedin.
+- `getAccessToken(payload: ProfileParams)`: Get the access token for linkedin.

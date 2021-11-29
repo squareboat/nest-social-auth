@@ -7,6 +7,15 @@ export interface CommonClientOptions {
   clientId: string;
 }
 
+export interface FacebookCredentialsPayload {
+  accessToken?:string;
+}
+
+
+export interface GoogleCredentialsPayload {
+  id_token?:string;
+}
+
   export interface TwitterClientOption {
     host: string;
     password: string;

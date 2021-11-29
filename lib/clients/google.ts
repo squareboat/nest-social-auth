@@ -1,7 +1,8 @@
 import { CommonClientOptions } from "../interfaces";
 import { OauthClient } from "../interfaces/authorizer";
 import { HttpException } from "@nestjs/common";
-import { HttpService } from '@nestjs/axios';
+import { HttpService } from "@nestjs/axios";
+import { GoogleCredentialsPayload } from "../interfaces";
 
 export class GoogleClient implements OauthClient {
   private http;
@@ -11,7 +12,7 @@ export class GoogleClient implements OauthClient {
 
   // Sign in with the credential from the Facebook user.
 
-  async getProfile(payload: Record<string, any>): Promise<any> {
+  async getProfile(payload: GoogleCredentialsPayload): Promise<any> {
     const link = `https://oauth2.googleapis.com/tokeninfo?id_token=${payload.id_token}}`;
     const response = await this.http
       .get(link, {
