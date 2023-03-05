@@ -1,6 +1,6 @@
 # NestJS Social login
 
-A mult-disk mult-driver filesystem manager for NestJS. 💾
+A mult-disk mult-driver social authentication manager for NestJS. 
 
 ## Table of Content
 
@@ -17,10 +17,11 @@ A mult-disk mult-driver filesystem manager for NestJS. 💾
     - [Linkedin](#linkedin)
   - [Usage](#usage)
     - [Methods](#methods)
+  - [License](#license)
 
 ## Introduction
 
-This package provides a flexible filesystem abstraction. It contains drivers for working with various filesystems with ease. It is super easy to switch between the disks as the API remains the same for each system.
+This library provides functionality for validating social authentication credentials for Facebook, Google, and LinkedIn. It can be used in the backend of your application to ensure that the credentials provided by the user are valid and can be used to authenticate with the respective social media platforms.
 
 ---
 
@@ -191,15 +192,28 @@ The best part about this package is the simplicity that it provides while workin
 To serve the file objects from your project, have a look at [serve-static](https://docs.nestjs.com/recipes/serve-static) module by NestJS.
 
 ---
-
----
+m
+--- 
 
 ## Usage
 
 This package provides a single and uniform API for any type of operation across different drivers.
+You just have to Call the function Oauthorizer and pass the name of social platform and use thr methods provided. 
+
+
+```typescript
+Oauthorizer('google').getProfile({id_token:''})
+Oauthorizer('facebook').getProfile({accessToken:''})
+Oauthorizer('linkedin').getProfile({code:''})
+
+
+```
 
 #### Methods
 
 - `getProfile(payload: CredentialsPayload)`: Get user profile from token.
 
 - `getAccessToken(payload: ProfileParams)`: Get the access token for linkedin.
+
+### License
+This library is licensed under the MIT License.

@@ -1,21 +1,28 @@
 {
-  "name": "nest-social-auth",
-  "version": "0.1.0",
+  "name": "@squareboat/nest-social-auth",
+  "version": "0.1.1",
   "description": "The social authentication library for your NestJS Applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "keywords": [
     "nestjs",
-    "nestjs-queue",
-    "nestjs-queueing",
-    "nestjs-sqs"
+    "google-login",
+"linkedin-login",
+    "nestjs-social-auth",
+    "social-platforms",
+    "social-authentication",
+    "auth-2.0",
+    "facebook-login",
+    "linkedin",
+    "facebook",
+    "google"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/chhabra1112/nest-social-auth.git"
+    "url": "https://github.com/squareboat/nest-social-auth.git"
   },
   "bugs": {
-    "url": "https://github.com/chhabra1112/nest-social-auth/issues"
+    "url": "https://github.com/squareboat/nest-social-auth/issues"
   },
   "homepage": "",
   "author": "Piyush Chhabra <piyushchhabra.1198@gmail.com>",
