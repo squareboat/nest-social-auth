@@ -37,18 +37,19 @@ export interface OauthOptions {
   };
 }
 
-export interface OauthAsyncOptionsFactory {
+export interface OauthOptionsFactory {
   createOauthOptions(): Promise<OauthOptions> | OauthOptions;
 }
 
-export interface OauthOptionsFactory {
-    createOauthOptions(): Promise<OauthOptions> | OauthOptions;
-}
+/**
+ * @deprecated Use `OauthOptionsFactory`.
+ */
+export type OauthAsyncOptionsFactory = OauthOptionsFactory;
 
 export interface OauthAsyncOptions extends Pick<ModuleMetadata, 'imports'> {
   name?: string;
-  isGlobal: boolean;
-  useExisting?: Type<OauthOptions>;
+  isGlobal?: boolean;
+  useExisting?: Type<OauthOptionsFactory>;
   useClass?: Type<OauthOptionsFactory>;
   useFactory?: (...args: any[]) => Promise<OauthOptions> | OauthOptions;
   inject?: any[];

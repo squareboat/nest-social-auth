@@ -1,9 +1,9 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common';
+import { DynamicModule, Module, Provider, Type } from '@nestjs/common';
 import { OAUTH_OPTIONS } from './constants';
 import {
   OauthAsyncOptions,
-  OauthAsyncOptionsFactory,
   OauthOptions,
+  OauthOptionsFactory,
 } from './interfaces';
 import { OauthMetadata } from './metadata';
 import { OauthService } from './service';
@@ -33,15 +33,19 @@ export class OauthModule {
     return {
       global: options.isGlobal || false,
       module: OauthModule,
+      imports: options.imports || [],
       providers: [
-        this.createStorageOptionsProvider(options),
+        this.createOauthOptionsProvider(options),
+        ...(options.useClass
+          ? [{ provide: options.useClass, useClass: options.useClass }]
+          : []),
         OauthService,
         OauthMetadata,
       ],
     };
   }
 
-  private static createStorageOptionsProvider(
+  private static createOauthOptionsProvider(
     options: OauthAsyncOptions,
   ): Provider {
     if (options.useFactory) {
@@ -52,11 +56,14 @@ export class OauthModule {
       };
     }
 
+    const inject = [
+      (options.useClass || options.useExisting) as Type<OauthOptionsFactory>,
+    ];
     return {
       provide: OAUTH_OPTIONS,
-      useFactory: async (optionsFactory: OauthAsyncOptionsFactory) =>
+      useFactory: async (optionsFactory: OauthOptionsFactory) =>
         await optionsFactory.createOauthOptions(),
-      inject: [options.useExisting || options.useClass ||''],
+      inject,
     };
   }
 }
