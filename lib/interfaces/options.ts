@@ -7,8 +7,32 @@ export interface CommonClientOptions {
   clientId: string;
 }
 
+export interface FacebookClientOptions {
+  /** App ID. The access token must have been issued for this app. */
+  clientId: string;
+  /** App secret. Used for debug_token and appsecret_proof, never sent to the client. */
+  clientSecret: string;
+  /** Graph API version. Default: v26.0. */
+  graphApiVersion?: string;
+  /** Default: https://graph.facebook.com */
+  graphApiUrl?: string;
+}
+
 export interface FacebookCredentialsPayload {
-  accessToken?:string;
+  /** User access token from Facebook Login. */
+  accessToken: string;
+}
+
+/** Fields returned by /me?fields=id,name,email,picture */
+export interface FacebookProfile {
+  id: string;
+  name?: string;
+  /** Missing if the user has no email or did not grant the `email` permission. */
+  email?: string;
+  picture?: {
+    data: { url: string; width?: number; height?: number; is_silhouette?: boolean };
+  };
+  [field: string]: any;
 }
 
 
@@ -65,7 +89,7 @@ export interface OauthOptions {
   default: Clients;
   clients: {
     google?: GoogleClientOptions;
-    facebook?:CommonClientOptions;
+    facebook?: FacebookClientOptions;
     linkedin?:CommonClientOptions;
     twitter?:TwitterClientOption;
   };
