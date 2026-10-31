@@ -58,12 +58,17 @@ export class GoogleClient implements OauthClient {
 
     const key = (await this.getKeys()).get(header.kid);
     if (!key) throw invalid('unknown signing key');
-    const signed = verify(
-      'RSA-SHA256',
-      Buffer.from(`${rawHeader}.${rawClaims}`),
-      key,
-      Buffer.from(rawSignature, 'base64url'),
-    );
+    let signed = false;
+    try {
+      signed = verify(
+        'RSA-SHA256',
+        Buffer.from(`${rawHeader}.${rawClaims}`),
+        key,
+        Buffer.from(rawSignature, 'base64url'),
+      );
+    } catch {
+      // malformed signature
+    }
     if (!signed) throw invalid('bad signature');
 
     this.checkClaims(claims);
