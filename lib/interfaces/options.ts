@@ -2,16 +2,20 @@ import { ModuleMetadata, Type } from '@nestjs/common';
 
 export type Clients = 'google' | 'facebook' | 'linkedin';
 
+/**
+ * `clientId`/`clientSecret` may be `undefined` so `process.env.X` type-checks
+ * under `strict`; using a client whose values are empty throws an Error.
+ */
 export interface CommonClientOptions {
-  clientSecret: string;
-  clientId: string;
+  clientSecret: string | undefined;
+  clientId: string | undefined;
 }
 
 export interface FacebookClientOptions extends CommonClientOptions {
   /** App ID. The access token must have been issued for this app. */
-  clientId: string;
-  /** App secret. Used for debug_token and appsecret_proof, never sent to the client. */
-  clientSecret: string;
+  clientId: string | undefined;
+  /** App secret. Used for debug_token and appsecret_proof, never sent to the browser. */
+  clientSecret: string | undefined;
   /** Graph API version. Default: v26.0. */
   graphApiVersion?: string;
   /** Default: https://graph.facebook.com */
@@ -38,7 +42,7 @@ export interface FacebookProfile {
 
 export interface GoogleClientOptions {
   /** OAuth client ID of your app; the ID token's `aud` must match it. */
-  clientId: string;
+  clientId: string | undefined;
   /** Not needed to verify ID tokens. */
   clientSecret?: string;
   /**
@@ -75,8 +79,8 @@ export interface GoogleProfile {
 }
 
 export interface LinkedinClientOptions extends CommonClientOptions {
-  clientId: string;
-  clientSecret: string;
+  clientId: string | undefined;
+  clientSecret: string | undefined;
   /** Default: https://www.linkedin.com/oauth/v2/accessToken */
   tokenUrl?: string;
   /**
