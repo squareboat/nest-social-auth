@@ -12,6 +12,9 @@ const GOOGLE_CERTS_URL = 'https://www.googleapis.com/oauth2/v3/certs';
 const GOOGLE_ISSUERS = ['accounts.google.com', 'https://accounts.google.com'];
 // the allowance google-auth-library uses for iat/exp
 const CLOCK_SKEW_SECONDS = 300;
+// a JWT segment is unpadded base64url (RFC 7515). Buffer.from(..., 'base64url')
+// would also accept padding, the +/ alphabet and stray characters.
+const SEGMENT = /^[A-Za-z0-9_-]+$/;
 
 function decodeSegment(segment: string): Record<string, any> | undefined {
   try {
@@ -51,10 +54,12 @@ export class GoogleClient implements OauthClient {
     const parts = typeof token === 'string' ? token.split('.') : [];
     if (parts.length !== 3) throw invalid('malformed');
     const [rawHeader, rawClaims, rawSignature] = parts;
+    if (!SEGMENT.test(rawHeader) || !SEGMENT.test(rawClaims)) throw invalid('malformed');
     const header = decodeSegment(rawHeader);
     const claims = decodeSegment(rawClaims);
     if (!header || !claims) throw invalid('malformed');
     if (header.alg !== 'RS256') throw invalid(`unexpected algorithm ${header.alg}`);
+    if (!SEGMENT.test(rawSignature)) throw invalid('malformed signature');
 
     const key = (await this.getKeys()).get(header.kid);
     if (!key) throw invalid('unknown signing key');
@@ -113,11 +118,19 @@ export class GoogleClient implements OauthClient {
     const keys = new Map<string, KeyObject>();
     for (const jwk of data.keys) {
       if (!jwk || jwk.kty !== 'RSA' || typeof jwk.kid !== 'string') continue;
+      if ((jwk.alg && jwk.alg !== 'RS256') || (jwk.use && jwk.use !== 'sig')) continue;
+      if (!SEGMENT.test(jwk.n) || !SEGMENT.test(jwk.e)) continue;
       try {
-        keys.set(jwk.kid, createPublicKey({ key: jwk, format: 'jwk' }));
+        const key = createPublicKey({ key: jwk, format: 'jwk' });
+        // Node accepts an empty modulus; RS256 needs at least 2048 bits (RFC 7518)
+        if ((key.asymmetricKeyDetails?.modulusLength || 0) >= 2048) keys.set(jwk.kid, key);
       } catch {
         // skip keys Node cannot read
       }
+    }
+    // don't cache an empty set: every login would fail until max-age passes
+    if (keys.size === 0) {
+      throw new OauthProviderError('Google: no usable RSA keys in the certs response', 'Google', 200, data);
     }
     const maxAge = /max-age=(\d+)/i.exec(headers.get('cache-control') || '');
     this.keysExpireAt = Date.now() + (maxAge ? Number(maxAge[1]) * 1000 : 0);
