@@ -191,10 +191,11 @@ Exchange the code on your server rather than accepting access tokens from the br
 
 #### Other options
 
-Each client also takes URL options, for a proxy or a local stand-in in tests:
+Each client also takes a `timeout` and URL options (for a proxy or a local stand-in in tests):
 
 | Client     | Option            | Default                                        |
 | ---------- | ----------------- | ---------------------------------------------- |
+| all        | `timeout`         | `10000` ms per provider request (headers and body); then `OauthProviderError` |
 | `google`   | `certsUrl`        | `https://www.googleapis.com/oauth2/v3/certs`   |
 | `facebook` | `graphApiUrl`     | `https://graph.facebook.com`                   |
 | `facebook` | `graphApiVersion` | `v26.0`                                        |

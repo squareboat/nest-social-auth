@@ -61,6 +61,8 @@ export class FacebookClient implements OauthClient {
         input_token: token,
         access_token: `${clientId}|${clientSecret}`,
       })}`,
+      {},
+      this.options.timeout,
     );
     const info = debug.data?.data;
     if (!info || typeof info !== 'object') {
@@ -87,6 +89,8 @@ export class FacebookClient implements OauthClient {
           access_token: token,
           appsecret_proof: createHmac('sha256', clientSecret).update(token).digest('hex'),
         })}`,
+        {},
+        this.options.timeout,
       ));
     } catch (err) {
       // e.g. the token expired or was revoked since debug_token

@@ -19,6 +19,9 @@ export class OauthProviderError extends Error {
   }
 }
 
+/** Milliseconds a provider gets to answer, unless the client sets `timeout`. */
+export const DEFAULT_TIMEOUT = 10_000;
+
 export interface ProviderResponse<T = any> {
   data: T;
   headers: Headers;
@@ -40,7 +43,7 @@ export function describe(body: any): string {
  * HttpModule/HttpService left @nestjs/common in Nest 8, and @nestjs/axios 12
  * is ESM only, so the package uses fetch and has no HTTP dependency.
  *
- * Every failure (network error, non-2xx answer) throws `OauthProviderError`
+ * Every failure (network error, timeout, non-2xx answer) throws `OauthProviderError`
  * with `status` and `body`. Each client decides with `credentialError()`
  * which answers mean the user's token or code was rejected: the HTTP status
  * alone can't tell, e.g. Facebook sends rate limits as 400/403.
@@ -50,16 +53,26 @@ export async function request<T = any>(
   provider: string,
   url: string,
   init: RequestInit = {},
+  timeout?: number,
 ): Promise<ProviderResponse<T>> {
+  const ms = typeof timeout === 'number' && timeout > 0 ? timeout : DEFAULT_TIMEOUT;
   let res: Response;
+  let text: string;
   try {
+    // undici waits up to 300 s for headers by default; the signal also
+    // covers reading the body
     res = await fetch(url, {
       ...init,
+      signal: AbortSignal.timeout(ms),
       headers: { Accept: 'application/json', ...(init.headers as Record<string, string>) },
     });
+    text = await res.text();
   } catch (err: any) {
+    const timedOut = err?.name === 'TimeoutError' || err?.cause?.name === 'TimeoutError';
     throw new OauthProviderError(
-      `${provider}: request failed (${err?.cause?.code || err?.message || err})`,
+      timedOut
+        ? `${provider}: no response within ${ms} ms`
+        : `${provider}: request failed (${err?.cause?.code || err?.message || err})`,
       provider,
       undefined,
       undefined,
@@ -67,7 +80,6 @@ export async function request<T = any>(
     );
   }
 
-  const text = await res.text();
   let data: any = text;
   try {
     data = text ? JSON.parse(text) : {};

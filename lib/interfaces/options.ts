@@ -9,6 +9,8 @@ export type Clients = 'google' | 'facebook' | 'linkedin';
 export interface CommonClientOptions {
   clientSecret: string | undefined;
   clientId: string | undefined;
+  /** Milliseconds to wait for each provider request (headers and body). Default: 10000. */
+  timeout?: number;
 }
 
 export interface FacebookClientOptions extends CommonClientOptions {
@@ -50,6 +52,8 @@ export interface GoogleClientOptions {
    * Default: https://www.googleapis.com/oauth2/v3/certs
    */
   certsUrl?: string;
+  /** Milliseconds to wait for the certs request (headers and body). Default: 10000. */
+  timeout?: number;
 }
 
 export interface GoogleCredentialsPayload {

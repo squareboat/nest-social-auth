@@ -29,7 +29,7 @@ export class LinkedinClient implements OauthClient {
     try {
       const { data } = await request('LinkedIn', this.options.userInfoUrl || USERINFO_URL, {
         headers: { Authorization: `Bearer ${token}` },
-      });
+      }, this.options.timeout);
       return data as T;
     } catch (err) {
       // 401: invalid, expired or revoked token. 403 means the token lacks the
@@ -62,7 +62,7 @@ export class LinkedinClient implements OauthClient {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body,
-      });
+      }, this.options.timeout);
       return data;
     } catch (err) {
       // bad, expired or reused code, or a redirect_uri that doesn't match.
