@@ -170,7 +170,7 @@ facebook: {
 
 Create an app with [Facebook Login](https://developers.facebook.com/docs/facebook-login/) and send the user access token from the login (`authResponse.accessToken` in the JavaScript SDK) to your API.
 
-The token is checked with [`debug_token`](https://developers.facebook.com/docs/facebook-login/guides/advanced/manual-flow): it must be valid, a user token, and issued for your app ID. A token the user gave to another Facebook app is rejected. The profile is then read from `/me?fields=id,name,email,picture` with `appsecret_proof`. The app secret never leaves your server.
+The token is checked with [`debug_token`](https://developers.facebook.com/docs/facebook-login/guides/advanced/manual-flow): it must be valid, a user token, and issued for your app ID. A token the user gave to another Facebook app is rejected. The profile is then read from `/me?fields=id,name,email,picture` with `appsecret_proof`. Your app secret only goes to Facebook (as the app access token for `debug_token`), never into the `/me` call or to the browser.
 
 `getProfile()` returns `id`, `name`, `email` and `picture`. `email` is missing if the user has no email address or did not grant the `email` permission.
 
@@ -252,7 +252,7 @@ export class AuthController {
 - The provider could not be reached or answered with another error (5xx, rate limit): `OauthProviderError`, with `provider`, `status` and `body`.
 - The client is not configured or its `clientId`/`clientSecret` is empty (for example a missing env var), or `OauthModule` is not imported: `Error`.
 
-Error messages never contain the tokens or your secrets.
+Error messages include the provider's error text but never the request URL, which can contain tokens or your app secret.
 
 ---
 
