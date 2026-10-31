@@ -30,6 +30,9 @@ export class FacebookClient implements OauthClient {
       throw new UnauthorizedException('Facebook: access token missing');
     }
     const { clientId, clientSecret } = this.options;
+    if (!clientId || !clientSecret) {
+      throw new Error('Facebook: clientId and clientSecret must be set in the OauthModule options');
+    }
     const base = `${(this.options.graphApiUrl || GRAPH_API_URL).replace(/\/+$/, '')}/${
       this.options.graphApiVersion || GRAPH_API_VERSION
     }`;

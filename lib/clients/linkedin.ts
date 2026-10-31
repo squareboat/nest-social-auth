@@ -37,6 +37,9 @@ export class LinkedinClient implements OauthClient {
    * token (3-legged OAuth). Do this on the server: it uses the client secret.
    */
   async getAccessToken(payload: LinkedinTokenPayload): Promise<LinkedinTokenResponse> {
+    if (!this.options.clientId || !this.options.clientSecret) {
+      throw new Error('LinkedIn: clientId and clientSecret must be set in the OauthModule options');
+    }
     if (!payload?.code || typeof payload.code !== 'string') {
       throw new UnauthorizedException('LinkedIn: authorization code missing');
     }

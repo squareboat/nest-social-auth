@@ -44,6 +44,9 @@ export class GoogleClient implements OauthClient {
    * Throws `UnauthorizedException` if the token is not valid for your client ID.
    */
   async getProfile<T = GoogleProfile>(payload: GoogleCredentialsPayload): Promise<T> {
+    if (!this.options.clientId) {
+      throw new Error('Google: clientId is not set in the OauthModule options');
+    }
     const token = payload?.id_token;
     const parts = typeof token === 'string' ? token.split('.') : [];
     if (parts.length !== 3) throw invalid('malformed');
