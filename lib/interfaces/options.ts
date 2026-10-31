@@ -74,6 +74,58 @@ export interface GoogleProfile {
   [claim: string]: any;
 }
 
+export interface LinkedinClientOptions {
+  clientId: string;
+  clientSecret: string;
+  /** Default: https://www.linkedin.com/oauth/v2/accessToken */
+  tokenUrl?: string;
+  /**
+   * Default: https://api.linkedin.com/v2/userinfo ("Sign In with LinkedIn
+   * using OpenID Connect", scopes `openid profile email`). Apps still on the
+   * legacy "Sign In with LinkedIn" product (deprecated by LinkedIn on
+   * 1 Aug 2023) can set https://api.linkedin.com/v2/me.
+   */
+  userInfoUrl?: string;
+}
+
+export interface LinkedinTokenPayload {
+  /** The `code` LinkedIn sent to your redirect URI. */
+  code: string;
+  /** The same redirect_uri used in the authorization request. */
+  redirect_uri: string;
+}
+
+export interface LinkedinCredentialsPayload {
+  access_token: string;
+}
+
+export interface LinkedinTokenResponse {
+  access_token: string;
+  /** Seconds until the access token expires. */
+  expires_in: number;
+  scope?: string;
+  token_type?: string;
+  /** Present when the `openid` scope was requested. */
+  id_token?: string;
+  refresh_token?: string;
+  refresh_token_expires_in?: number;
+  [field: string]: any;
+}
+
+/** Response of the OpenID Connect userinfo endpoint. */
+export interface LinkedinProfile {
+  sub: string;
+  name?: string;
+  given_name?: string;
+  family_name?: string;
+  picture?: string;
+  locale?: string | { country: string; language: string };
+  /** Only with the `email` scope, and not for every member. */
+  email?: string;
+  email_verified?: boolean;
+  [field: string]: any;
+}
+
   export interface TwitterClientOption {
     host: string;
     password: string;
@@ -90,7 +142,7 @@ export interface OauthOptions {
   clients: {
     google?: GoogleClientOptions;
     facebook?: FacebookClientOptions;
-    linkedin?:CommonClientOptions;
+    linkedin?: LinkedinClientOptions;
     twitter?:TwitterClientOption;
   };
 }
