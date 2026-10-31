@@ -1,13 +1,13 @@
 import { ModuleMetadata, Type } from '@nestjs/common';
 
-export type Clients = 'google'|'facebook'|'twitter'|'linkedin';
+export type Clients = 'google' | 'facebook' | 'linkedin';
 
 export interface CommonClientOptions {
   clientSecret: string;
   clientId: string;
 }
 
-export interface FacebookClientOptions {
+export interface FacebookClientOptions extends CommonClientOptions {
   /** App ID. The access token must have been issued for this app. */
   clientId: string;
   /** App secret. Used for debug_token and appsecret_proof, never sent to the client. */
@@ -74,7 +74,7 @@ export interface GoogleProfile {
   [claim: string]: any;
 }
 
-export interface LinkedinClientOptions {
+export interface LinkedinClientOptions extends CommonClientOptions {
   clientId: string;
   clientSecret: string;
   /** Default: https://www.linkedin.com/oauth/v2/accessToken */
@@ -126,24 +126,14 @@ export interface LinkedinProfile {
   [field: string]: any;
 }
 
-  export interface TwitterClientOption {
-    host: string;
-    password: string;
-    port: number;
-    database: number;
-    prefix: string;
-  }
-
-
-
 export interface OauthOptions {
   isGlobal?: boolean;
-  default: Clients;
+  /** Client used by `Oauthorizer()` / `Oauth.authorize()` without a name. */
+  default?: Clients;
   clients: {
     google?: GoogleClientOptions;
     facebook?: FacebookClientOptions;
     linkedin?: LinkedinClientOptions;
-    twitter?:TwitterClientOption;
   };
 }
 

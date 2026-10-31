@@ -5,7 +5,6 @@ import {
   OauthOptions,
   OauthOptionsFactory,
 } from './interfaces';
-import { OauthMetadata } from './metadata';
 import { OauthService } from './service';
 
 @Module({})
@@ -20,7 +19,6 @@ export class OauthModule {
       module: OauthModule,
       providers: [
         OauthService,
-        OauthMetadata,
         { provide: OAUTH_OPTIONS, useValue: options },
       ],
     };
@@ -40,7 +38,6 @@ export class OauthModule {
           ? [{ provide: options.useClass, useClass: options.useClass }]
           : []),
         OauthService,
-        OauthMetadata,
       ],
     };
   }
