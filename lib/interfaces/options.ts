@@ -12,8 +12,42 @@ export interface FacebookCredentialsPayload {
 }
 
 
+export interface GoogleClientOptions {
+  /** OAuth client ID of your app; the ID token's `aud` must match it. */
+  clientId: string;
+  /** Not needed to verify ID tokens. */
+  clientSecret?: string;
+  /**
+   * JWK set with Google's signing keys.
+   * Default: https://www.googleapis.com/oauth2/v3/certs
+   */
+  certsUrl?: string;
+}
+
 export interface GoogleCredentialsPayload {
-  id_token?:string;
+  /** The ID token (JWT) from Google Sign-In, e.g. the `credential` field. */
+  id_token: string;
+}
+
+/** Claims of a verified Google ID token. */
+export interface GoogleProfile {
+  iss: string;
+  sub: string;
+  aud: string;
+  azp?: string;
+  iat: number;
+  exp: number;
+  email?: string;
+  email_verified?: boolean;
+  name?: string;
+  given_name?: string;
+  family_name?: string;
+  picture?: string;
+  locale?: string;
+  /** Google Workspace domain; missing for consumer accounts. */
+  hd?: string;
+  nonce?: string;
+  [claim: string]: any;
 }
 
   export interface TwitterClientOption {
@@ -30,7 +64,7 @@ export interface OauthOptions {
   isGlobal?: boolean;
   default: Clients;
   clients: {
-    google?: CommonClientOptions;
+    google?: GoogleClientOptions;
     facebook?:CommonClientOptions;
     linkedin?:CommonClientOptions;
     twitter?:TwitterClientOption;

@@ -40,13 +40,15 @@ function describe(body: any): string {
  * is ESM only, so the package uses fetch and has no HTTP dependency.
  *
  * 400/401/403 answers mean the provider rejected the token or code and throw
- * `UnauthorizedException`; other failures throw `OauthProviderError`.
+ * `UnauthorizedException` (unless `credentialErrors` is false); other
+ * failures throw `OauthProviderError`.
  * Messages never contain the URL, because it can carry tokens.
  */
 export async function request<T = any>(
   provider: string,
   url: string,
   init: RequestInit = {},
+  credentialErrors = true,
 ): Promise<ProviderResponse<T>> {
   let res: Response;
   try {
@@ -75,7 +77,7 @@ export async function request<T = any>(
   if (res.ok) return { data, headers: res.headers };
 
   const reason = describe(data);
-  if (res.status === 400 || res.status === 401 || res.status === 403) {
+  if (credentialErrors && (res.status === 400 || res.status === 401 || res.status === 403)) {
     throw new UnauthorizedException(`${provider}: ${reason || 'credentials rejected'}`);
   }
   throw new OauthProviderError(
