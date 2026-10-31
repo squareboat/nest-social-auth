@@ -22,7 +22,11 @@ function resolveClient(client?: Clients): OauthClient {
   if (!name) {
     throw new Error('No client name passed and no `default` client set in the OauthModule options');
   }
-  const instance = OauthService.clients[name];
+  // own keys only: 'constructor', '__proto__' or 'toString' must not resolve
+  const instance =
+    typeof name === 'string' && Object.hasOwn(OauthService.clients, name)
+      ? OauthService.clients[name]
+      : undefined;
   if (!instance) {
     throw new Error(`Oauth client "${name}" is not configured in the OauthModule options`);
   }
