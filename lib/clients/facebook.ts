@@ -1,26 +1,20 @@
-import { CommonClientOptions } from "../interfaces";
-import { OauthClient } from "../interfaces/authorizer";
-import { HttpService } from "@nestjs/common";
-import { FacebookCredentialsPayload } from "../interfaces";
+import { CommonClientOptions, FacebookCredentialsPayload } from '../interfaces';
+import { OauthClient } from '../interfaces/authorizer';
+import { request } from '../http';
 
 export class FacebookClient implements OauthClient {
-  private http;
-  constructor(private options: CommonClientOptions) {
-    this.http = new HttpService();
-  }
+  constructor(private options: CommonClientOptions) {}
 
-  // Sign in with the credential from the Facebook user.
-
+  // Get the profile of the Facebook user the access token belongs to.
   async getProfile(payload: FacebookCredentialsPayload): Promise<any> {
-    const link = `https://graph.facebook.com/me?access_token=${payload.accessToken}&client_id=${this.options.clientId}}&client_secret=${this.options.clientSecret}&grant_type=client_credentials&fields=email,name,picture`;
-    const response = await this.http
-      .get(link, {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      })
-      .toPromise()
-      .catch((err) => {
-        throw new Error(err);
-      });
-    return response.data;
+    const query = new URLSearchParams({
+      access_token: payload.accessToken || '',
+      client_id: this.options.clientId,
+      client_secret: this.options.clientSecret,
+      grant_type: 'client_credentials',
+      fields: 'email,name,picture',
+    });
+    const { data } = await request('Facebook', `https://graph.facebook.com/me?${query}`);
+    return data;
   }
 }

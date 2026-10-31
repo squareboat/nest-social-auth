@@ -1,6 +1,6 @@
 import { CommonClientOptions } from '../interfaces';
 import { OauthClient } from '../interfaces/authorizer';
-import { HttpService } from '@nestjs/axios';
+import { request } from '../http';
 
 interface TokenParams {
   code: string;
@@ -8,15 +8,7 @@ interface TokenParams {
 }
 
 interface ProfileParams {
-    access_token: string;
-  }
-
-interface TokenBody {
-  code: string;
-  redirect_uri: string;
-  client_id: string;
-  client_secret: string;
-  grant_type: string ;
+  access_token: string;
 }
 
 interface TokenResponse {
@@ -25,46 +17,31 @@ interface TokenResponse {
 }
 
 export class LinkedinClient implements OauthClient {
-  private http;
-  constructor(private options: CommonClientOptions) {
-    this.http = new HttpService();
-  }
+  constructor(private options: CommonClientOptions) {}
 
-  // Sign in with the credential from the Facebook user.
-
+  // Get the profile of the LinkedIn member the access token belongs to.
   async getProfile(payload: ProfileParams): Promise<any> {
-    const link = `https://api.linkedin.com/v2/me`;
-
-    const response = await this.http
-      .get(link, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded','Authorization':`Bearer ${payload.access_token}` },
-      })
-      .toPromise()
-      .catch((err) => {
-        throw new Error(err);
-      });
-    const { data } = response;
-    return response.data
+    const { data } = await request('LinkedIn', 'https://api.linkedin.com/v2/me', {
+      headers: { Authorization: `Bearer ${payload.access_token}` },
+    });
+    return data;
   }
 
+  // Exchange an authorization code for an access token. LinkedIn expects a
+  // form-encoded body (axios 0.21 sent the object as JSON).
   async getAccessToken(payload: TokenParams): Promise<TokenResponse> {
-    const link = `https://www.linkedin.com/oauth/v2/accessToken`;
-    const body: TokenBody = {
-      ...payload,
+    const body = new URLSearchParams({
+      grant_type: 'authorization_code',
+      code: payload.code,
+      redirect_uri: payload.redirect_uri,
       client_id: this.options.clientId,
       client_secret: this.options.clientSecret,
-      grant_type: 'authorization_code',
-    };
-    const response = await this.http
-      .post(link, body, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      })
-      .toPromise()
-      .catch((err) => {
-        throw new Error(err);
-      });
-
-    const { data } = response;
+    });
+    const { data } = await request('LinkedIn', 'https://www.linkedin.com/oauth/v2/accessToken', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
     return data;
   }
 }

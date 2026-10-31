@@ -1,31 +1,18 @@
-import { CommonClientOptions } from "../interfaces";
-import { OauthClient } from "../interfaces/authorizer";
-import { HttpException } from "@nestjs/common";
-import { HttpService } from "@nestjs/axios";
-import { GoogleCredentialsPayload } from "../interfaces";
+import { HttpException } from '@nestjs/common';
+import { CommonClientOptions, GoogleCredentialsPayload } from '../interfaces';
+import { OauthClient } from '../interfaces/authorizer';
+import { request } from '../http';
 
 export class GoogleClient implements OauthClient {
-  private http;
-  constructor(private options: CommonClientOptions) {
-    this.http = new HttpService();
-  }
+  constructor(private options: CommonClientOptions) {}
 
-  // Sign in with the credential from the Facebook user.
-
+  // Verify the ID token from Google Sign-In and return its claims.
   async getProfile(payload: GoogleCredentialsPayload): Promise<any> {
-    const link = `https://oauth2.googleapis.com/tokeninfo?id_token=${payload.id_token}}`;
-    const response = await this.http
-      .get(link, {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      })
-      .toPromise()
-      .catch((err) => {
-        throw new Error(err);
-      });
-    const { data } = response;
+    const link = `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(payload.id_token || '')}`;
+    const { data } = await request('Google', link);
     if (data.aud !== this.options.clientId) {
-      throw new HttpException("Unauthorized", 403);
+      throw new HttpException('Unauthorized', 403);
     }
-    return response.data;
+    return data;
   }
 }
