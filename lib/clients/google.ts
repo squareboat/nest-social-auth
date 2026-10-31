@@ -106,12 +106,7 @@ export class GoogleClient implements OauthClient {
   }
 
   private async fetchKeys(): Promise<Map<string, KeyObject>> {
-    const { data, headers } = await request(
-      'Google',
-      this.options.certsUrl || GOOGLE_CERTS_URL,
-      {},
-      false,
-    );
+    const { data, headers } = await request('Google', this.options.certsUrl || GOOGLE_CERTS_URL);
     if (!data || !Array.isArray(data.keys)) {
       throw new OauthProviderError('Google: unexpected response from the certs endpoint', 'Google');
     }

@@ -249,7 +249,7 @@ export class AuthController {
 #### Errors
 
 - The provider rejected the token or code (invalid, expired, issued for another app or client ID): `UnauthorizedException`, so the request gets a 401.
-- The provider could not be reached or answered with another error (5xx, rate limit): `OauthProviderError`, with `provider`, `status` and `body`.
+- Anything that is not the user's fault: the provider is down or slow, rate limits (Facebook sends them as 400/403), a wrong app/client secret, missing scopes, an unexpected response: `OauthProviderError`, with `provider`, `status` and `body`. It is not an `HttpException`, so Nest logs it and answers 500.
 - The client is not configured or its `clientId`/`clientSecret` is empty (for example a missing env var), or `OauthModule` is not imported: `Error`.
 
 Error messages include the provider's error text but never the request URL, which can contain tokens or your app secret.

@@ -6,12 +6,26 @@ import {
   FacebookProfile,
 } from '../interfaces';
 import { OauthClient } from '../interfaces/authorizer';
-import { request } from '../http';
+import { credentialError, OauthProviderError, request } from '../http';
 
 const GRAPH_API_URL = 'https://graph.facebook.com';
 // unversioned calls use whatever version the app dashboard is set to
 const GRAPH_API_VERSION = 'v26.0';
 const PROFILE_FIELDS = 'id,name,email,picture';
+// Graph error codes about the user's token: 190 OAuthException (invalid,
+// expired, revoked, password changed) and 102 API session. Everything else,
+// e.g. rate limits 4/17/32/613 (`is_transient`), is about the app or Facebook.
+const TOKEN_ERROR_CODES = [190, 102];
+
+function isTokenError(body: any): boolean {
+  const error = body?.error;
+  return (
+    !!error &&
+    typeof error === 'object' &&
+    error.is_transient !== true &&
+    TOKEN_ERROR_CODES.includes(Number(error.code))
+  );
+}
 
 export class FacebookClient implements OauthClient {
   constructor(private options: FacebookClientOptions) {}
@@ -37,6 +51,10 @@ export class FacebookClient implements OauthClient {
       this.options.graphApiVersion || GRAPH_API_VERSION
     }`;
 
+    // debug_token is called with the app access token, so an HTTP-level error
+    // (wrong app secret, rate limit, outage) is about the app and stays an
+    // OauthProviderError. Problems with the user's token come back inside
+    // `data` (is_valid: false, data.error).
     const debug = await request(
       'Facebook',
       `${base}/debug_token?${new URLSearchParams({
@@ -45,9 +63,12 @@ export class FacebookClient implements OauthClient {
       })}`,
     );
     const info = debug.data?.data;
-    if (!info || info.is_valid !== true) {
+    if (!info || typeof info !== 'object') {
+      throw new OauthProviderError('Facebook: unexpected response from debug_token', 'Facebook', 200, debug.data);
+    }
+    if (info.is_valid !== true) {
       throw new UnauthorizedException(
-        `Facebook: ${info?.error?.message || 'invalid access token'}`,
+        `Facebook: ${info.error?.message || 'invalid access token'}`,
       );
     }
     if (String(info.app_id) !== String(clientId)) {
@@ -57,15 +78,24 @@ export class FacebookClient implements OauthClient {
       throw new UnauthorizedException('Facebook: not a user access token');
     }
 
-    const { data } = await request(
-      'Facebook',
-      `${base}/me?${new URLSearchParams({
-        fields: PROFILE_FIELDS,
-        access_token: token,
-        appsecret_proof: createHmac('sha256', clientSecret).update(token).digest('hex'),
-      })}`,
-    );
-    if (info.user_id && String(data?.id) !== String(info.user_id)) {
+    let data: any;
+    try {
+      ({ data } = await request(
+        'Facebook',
+        `${base}/me?${new URLSearchParams({
+          fields: PROFILE_FIELDS,
+          access_token: token,
+          appsecret_proof: createHmac('sha256', clientSecret).update(token).digest('hex'),
+        })}`,
+      ));
+    } catch (err) {
+      // e.g. the token expired or was revoked since debug_token
+      throw credentialError(err, (_status, body) => isTokenError(body));
+    }
+    if (!data || typeof data !== 'object' || !data.id) {
+      throw new OauthProviderError('Facebook: unexpected response from /me', 'Facebook', 200, data);
+    }
+    if (info.user_id && String(data.id) !== String(info.user_id)) {
       throw new UnauthorizedException('Facebook: profile does not match the access token');
     }
     return data as T;

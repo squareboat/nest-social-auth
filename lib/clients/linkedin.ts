@@ -7,7 +7,7 @@ import {
   LinkedinTokenResponse,
 } from '../interfaces';
 import { OauthClient } from '../interfaces/authorizer';
-import { request } from '../http';
+import { credentialError, request } from '../http';
 
 const TOKEN_URL = 'https://www.linkedin.com/oauth/v2/accessToken';
 // "Sign In with LinkedIn using OpenID Connect"; /v2/me belongs to the
@@ -26,10 +26,16 @@ export class LinkedinClient implements OauthClient {
     if (!token || typeof token !== 'string') {
       throw new UnauthorizedException('LinkedIn: access token missing');
     }
-    const { data } = await request('LinkedIn', this.options.userInfoUrl || USERINFO_URL, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return data as T;
+    try {
+      const { data } = await request('LinkedIn', this.options.userInfoUrl || USERINFO_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return data as T;
+    } catch (err) {
+      // 401: invalid, expired or revoked token. 403 means the token lacks the
+      // openid/profile scopes the app asked for: an app problem, kept as is.
+      throw credentialError(err, (status) => status === 401);
+    }
   }
 
   /**
@@ -51,11 +57,20 @@ export class LinkedinClient implements OauthClient {
       client_id: this.options.clientId,
       client_secret: this.options.clientSecret,
     });
-    const { data } = await request('LinkedIn', this.options.tokenUrl || TOKEN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body,
-    });
-    return data;
+    try {
+      const { data } = await request('LinkedIn', this.options.tokenUrl || TOKEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+      });
+      return data;
+    } catch (err) {
+      // bad, expired or reused code, or a redirect_uri that doesn't match.
+      // invalid_client (wrong client ID/secret) is a server-side problem.
+      throw credentialError(
+        err,
+        (status, res) => (status === 400 || status === 401) && res?.error !== 'invalid_client',
+      );
+    }
   }
 }

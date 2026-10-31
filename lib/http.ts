@@ -2,8 +2,9 @@ import { UnauthorizedException } from '@nestjs/common';
 
 /**
  * Thrown when a provider could not be reached or answered with an error that
- * is not about the user's credentials (rate limits, 5xx, unexpected bodies).
- * Rejected credentials throw `UnauthorizedException` instead.
+ * is not about the user's credentials: rate limits, a wrong app/client
+ * secret, 5xx, unexpected bodies. Rejected credentials throw
+ * `UnauthorizedException` instead.
  */
 export class OauthProviderError extends Error {
   constructor(
@@ -24,7 +25,7 @@ export interface ProviderResponse<T = any> {
 }
 
 // Error text from the shapes Google, Facebook and LinkedIn use.
-function describe(body: any): string {
+export function describe(body: any): string {
   if (!body || typeof body !== 'object') {
     return typeof body === 'string' ? body.slice(0, 200) : '';
   }
@@ -39,16 +40,16 @@ function describe(body: any): string {
  * HttpModule/HttpService left @nestjs/common in Nest 8, and @nestjs/axios 12
  * is ESM only, so the package uses fetch and has no HTTP dependency.
  *
- * 400/401/403 answers mean the provider rejected the token or code and throw
- * `UnauthorizedException` (unless `credentialErrors` is false); other
- * failures throw `OauthProviderError`.
+ * Every failure (network error, non-2xx answer) throws `OauthProviderError`
+ * with `status` and `body`. Each client decides with `credentialError()`
+ * which answers mean the user's token or code was rejected: the HTTP status
+ * alone can't tell, e.g. Facebook sends rate limits as 400/403.
  * Messages never contain the URL, because it can carry tokens.
  */
 export async function request<T = any>(
   provider: string,
   url: string,
   init: RequestInit = {},
-  credentialErrors = true,
 ): Promise<ProviderResponse<T>> {
   let res: Response;
   try {
@@ -77,13 +78,26 @@ export async function request<T = any>(
   if (res.ok) return { data, headers: res.headers };
 
   const reason = describe(data);
-  if (credentialErrors && (res.status === 400 || res.status === 401 || res.status === 403)) {
-    throw new UnauthorizedException(`${provider}: ${reason || 'credentials rejected'}`);
-  }
   throw new OauthProviderError(
     `${provider}: request failed with status ${res.status}${reason ? ` (${reason})` : ''}`,
     provider,
     res.status,
     data,
   );
+}
+
+/**
+ * Turns an `OauthProviderError` into `UnauthorizedException` when
+ * `rejected(status, body)` says the provider rejected the user's token or
+ * code. Anything else is returned unchanged, so server-side problems
+ * (wrong secret, rate limits, outages) stay errors Nest logs as 500s.
+ */
+export function credentialError(
+  err: unknown,
+  rejected: (status: number, body: any) => boolean,
+): unknown {
+  if (err instanceof OauthProviderError && err.status !== undefined && rejected(err.status, err.body)) {
+    return new UnauthorizedException(`${err.provider}: ${describe(err.body) || 'credentials rejected'}`);
+  }
+  return err;
 }
