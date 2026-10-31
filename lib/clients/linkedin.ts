@@ -1,70 +1,76 @@
-import { CommonClientOptions } from '../interfaces';
+import { UnauthorizedException } from '@nestjs/common';
+import {
+  LinkedinClientOptions,
+  LinkedinCredentialsPayload,
+  LinkedinProfile,
+  LinkedinTokenPayload,
+  LinkedinTokenResponse,
+} from '../interfaces';
 import { OauthClient } from '../interfaces/authorizer';
-import { HttpService } from '@nestjs/axios';
+import { credentialError, request } from '../http';
 
-interface TokenParams {
-  code: string;
-  redirect_uri: string;
-}
-
-interface ProfileParams {
-    access_token: string;
-  }
-
-interface TokenBody {
-  code: string;
-  redirect_uri: string;
-  client_id: string;
-  client_secret: string;
-  grant_type: string ;
-}
-
-interface TokenResponse {
-  access_token: string;
-  expires_in: string;
-}
+const TOKEN_URL = 'https://www.linkedin.com/oauth/v2/accessToken';
+// "Sign In with LinkedIn using OpenID Connect"; /v2/me belongs to the
+// legacy product LinkedIn deprecated on 1 Aug 2023
+const USERINFO_URL = 'https://api.linkedin.com/v2/userinfo';
 
 export class LinkedinClient implements OauthClient {
-  private http;
-  constructor(private options: CommonClientOptions) {
-    this.http = new HttpService();
+  constructor(private options: LinkedinClientOptions) {}
+
+  /**
+   * Get the profile of the LinkedIn member the access token belongs to,
+   * from the OpenID Connect userinfo endpoint.
+   */
+  async getProfile<T = LinkedinProfile>(payload: LinkedinCredentialsPayload): Promise<T> {
+    const token = payload?.access_token;
+    if (!token || typeof token !== 'string') {
+      throw new UnauthorizedException('LinkedIn: access token missing');
+    }
+    try {
+      const { data } = await request('LinkedIn', this.options.userInfoUrl || USERINFO_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, this.options.timeout);
+      return data as T;
+    } catch (err) {
+      // 401: invalid, expired or revoked token. 403 means the token lacks the
+      // openid/profile scopes the app asked for: an app problem, kept as is.
+      throw credentialError(err, (status) => status === 401);
+    }
   }
 
-  // Sign in with the credential from the Facebook user.
-
-  async getProfile(payload: ProfileParams): Promise<any> {
-    const link = `https://api.linkedin.com/v2/me`;
-
-    const response = await this.http
-      .get(link, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded','Authorization':`Bearer ${payload.access_token}` },
-      })
-      .toPromise()
-      .catch((err) => {
-        throw new Error(err);
-      });
-    const { data } = response;
-    return response.data
-  }
-
-  async getAccessToken(payload: TokenParams): Promise<TokenResponse> {
-    const link = `https://www.linkedin.com/oauth/v2/accessToken`;
-    const body: TokenBody = {
-      ...payload,
+  /**
+   * Exchange the authorization code from LinkedIn's redirect for an access
+   * token (3-legged OAuth). Do this on the server: it uses the client secret.
+   */
+  async getAccessToken(payload: LinkedinTokenPayload): Promise<LinkedinTokenResponse> {
+    if (!this.options.clientId || !this.options.clientSecret) {
+      throw new Error('LinkedIn: clientId and clientSecret must be set in the OauthModule options');
+    }
+    if (!payload?.code || typeof payload.code !== 'string') {
+      throw new UnauthorizedException('LinkedIn: authorization code missing');
+    }
+    // LinkedIn expects a form-encoded body
+    const body = new URLSearchParams({
+      grant_type: 'authorization_code',
+      code: payload.code,
+      redirect_uri: payload.redirect_uri ?? '',
       client_id: this.options.clientId,
       client_secret: this.options.clientSecret,
-      grant_type: 'authorization_code',
-    };
-    const response = await this.http
-      .post(link, body, {
+    });
+    try {
+      const { data } = await request('LinkedIn', this.options.tokenUrl || TOKEN_URL, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      })
-      .toPromise()
-      .catch((err) => {
-        throw new Error(err);
-      });
-
-    const { data } = response;
-    return data;
+        body,
+      }, this.options.timeout);
+      return data;
+    } catch (err) {
+      // bad, expired or reused code, or a redirect_uri that doesn't match.
+      // invalid_client (wrong client ID/secret) is a server-side problem.
+      throw credentialError(
+        err,
+        (status, res) => (status === 400 || status === 401) && res?.error !== 'invalid_client',
+      );
+    }
   }
 }
